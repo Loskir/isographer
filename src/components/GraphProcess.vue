@@ -39,9 +39,8 @@
         let ss = this.$store.state.svgSize;
         return x > ss || y > ss
       },
-      getHyperbolaMidpointer(start, end, constant) {
+      getHyperbolaMidpointer(start, end, constant, step=10) {
         let distance = (p1, p2) => Math.sqrt(Math.pow(p1[0]-p2[0], 2)+Math.pow(p1[1]-p2[1], 2));
-        let step = 10;
         let points = [];
         points.push([start, constant/start]);
         let dp = [];
@@ -66,14 +65,13 @@
         return midPointer
       },
       // низшие функции
-      getHyperbola(start, end, constant, overflow=false) {
+      getHyperbola(start, end, constant, step=10, overflow=false) {
         // при overflow = true он будет добавлять даже те точки, которые выходят за пределы svg
-        let step = 10;
         let points = [];
         if (overflow || !this.isOverflow(start, constant/start)) points.push([start, constant/start]);
         for (let x = Math.ceil(start/step)*step; x <= Math.floor(end/step)*step; x += step) {
           let y = constant/x;
-          if (!overflow && this.isOverflow(x, y)) continue;
+          if (!overflow && this.isOverflow(x-step, constant/(x+step))) continue;
           points.push([x, y])
         }
         if (overflow || !this.isOverflow(end, constant/end)) points.push([end, constant/end]);
@@ -85,8 +83,8 @@
       getHorizontalLine(start, end, y) {
         return [[start, y], [end, y]]
       },
-      getInclinedLine(start, end, constant) {
-        return [[start, constant*start], [end, constant*end]]
+      getInclinedLine(start, end, c) {
+        return [[start, start*c], [end, end*c]]
       },
       getArrow(x, y, α=this.arrowRotation) {
         let l = 40;
@@ -110,8 +108,8 @@
       processHorizontalLine(start, end, y) {
         return this.makePolylinePoints(this.getHorizontalLine(start, end, y))
       },
-      processInclinedLine(start, end, constant) {
-        return this.makePolylinePoints(this.getInclinedLine(start, end, constant))
+      processInclinedLine(start, end, c) {
+        return this.makePolylinePoints(this.getInclinedLine(start, end, c))
       },
       // обертки для низших функций
       makeHyperbola(v, c) {
@@ -129,52 +127,54 @@
     },
     computed: {
       line() {
-        let process = this.process;
+        let nur = this.$store.state.nur;
+        let {type, p, v, t} = this.process;
         if (this.graphType === 'pv') {
-          if (process.type === 'isothermal') return this.makeHyperbola(process.v, process.t*500);
-          if (process.type === 'isochoric') return this.makeVerticalLine(process.p, process.v);
-          if (process.type === 'isobaric') return this.makeHorizontalLine(process.v, process.p);
+          if (type === 'isothermal') return this.makeHyperbola(v, t*nur);
+          if (type === 'isochoric') return this.makeVerticalLine(p, v);
+          if (type === 'isobaric') return this.makeHorizontalLine(v, p);
         }
         else if (this.graphType === 'vt') {
-          if (process.type === 'isothermal') return this.makeVerticalLine(process.v, process.t);
-          if (process.type === 'isochoric') return this.makeHorizontalLine(process.t, process.v);
-          if (process.type === 'isobaric') return this.makeInclinedLine(process.t, 500/process.p);
-          //                        деление - чтобы 45deg было равно 500K, а не 1K ^^^
+          if (type === 'isothermal') return this.makeVerticalLine(v, t);
+          if (type === 'isochoric') return this.makeHorizontalLine(t, v);
+          if (type === 'isobaric') return this.makeInclinedLine(t, nur/p);
+          //                     деление - чтобы 45deg было равно [nur] K, а не 1K ^^^^^^^^^^^
           // а еще потому, что коэффициент наклона обратно пропорционален p (p больше => угол наклона меньше)
         }
         else if (this.graphType === 'pt') {
-          if (process.type === 'isothermal') return this.makeVerticalLine(process.p, process.t);
-          if (process.type === 'isochoric') return this.makeInclinedLine(process.t, 500/process.v);
-          if (process.type === 'isobaric') return this.makeHorizontalLine(process.t, process.p);
+          if (type === 'isothermal') return this.makeVerticalLine(p, t);
+          if (type === 'isochoric') return this.makeInclinedLine(t, nur/v);
+          if (type === 'isobaric') return this.makeHorizontalLine(t, p);
         }
       },
       isoline() {
-        let process = this.process;
+        let nur = this.$store.state.nur;
+        let {type, p, v, t} = this.process;
         if (this.graphType === 'pv') {
-          if (process.type === 'isothermal') return this.processHyperbola(1, 1000, process.t*500);
-          if (process.type === 'isochoric') return this.processVerticalLine(1, 1000, process.v);
-          if (process.type === 'isobaric') return this.processHorizontalLine(1, 1000, process.p);
+          if (type === 'isothermal') return this.processHyperbola(1, 1000, t*nur);
+          if (type === 'isochoric') return this.processVerticalLine(1, 1000, v);
+          if (type === 'isobaric') return this.processHorizontalLine(1, 1000, p);
         }
         else if (this.graphType === 'vt') {
-          if (process.type === 'isothermal') return this.processVerticalLine(1, 1000, process.t);
-          if (process.type === 'isochoric') return this.processHorizontalLine(1, 1000, process.v);
-          if (process.type === 'isobaric') return this.processInclinedLine(1, 1000, 500/process.p);
+          if (type === 'isothermal') return this.processVerticalLine(1, 1000, t);
+          if (type === 'isochoric') return this.processHorizontalLine(1, 1000, v);
+          if (type === 'isobaric') return this.processInclinedLine(1, 1000, nur/p);
         }
         else if (this.graphType === 'pt') {
-          if (process.type === 'isothermal') return this.processVerticalLine(1, 1000, process.t);
-          if (process.type === 'isochoric') return this.processInclinedLine(1, 1000, 500/process.v);
-          if (process.type === 'isobaric') return this.processHorizontalLine(1, 1000, process.p);
+          if (type === 'isothermal') return this.processVerticalLine(1, 1000, t);
+          if (type === 'isochoric') return this.processInclinedLine(1, 1000, nur/v);
+          if (type === 'isobaric') return this.processHorizontalLine(1, 1000, p);
         }
       },
       arrow() {
+        let nur = this.$store.state.nur;
         let {type, p, v, t} = this.process;
         return this.makePolylinePoints((() => {
           if (this.graphType === 'pv') {
-//            if (type === 'isothermal') return this.makeHyperbola(v, t*500);
             if (type === 'isothermal') {
-              let args = [...v.start > v.end ? [v.end, v.start] : [v.start, v.end], t*500];
+              let args = [...v.start > v.end ? [v.end, v.start] : [v.start, v.end], t*nur, 1];
               let mp = this.getHyperbolaMidpointer(...args);
-              let points = this.getHyperbola(...args);
+              let points = this.getHyperbola(...args, true);
               let angle = 0;
               if (mp === 0) {
                 let c = points[mp];
@@ -197,7 +197,7 @@
             if (type === 'isochoric') return this.getArrow(v, (p.start+p.end)/2, p.start < p.end ? 0 : Math.PI);
             if (type === 'isobaric') return this.getArrow((v.start+v.end)/2, p, (v.start < v.end ? 0 : Math.PI)-Math.PI/2);
           }
-          else if (this.graphType === 'vt') {
+          if (this.graphType === 'vt') {
             if (type === 'isothermal') return this.getArrow(t, (v.start+v.end)/2, v.start < v.end ? 0 : Math.PI);
             if (type === 'isochoric') return this.getArrow((t.start+t.end)/2, v, (t.start < t.end ? 0 : Math.PI)-Math.PI/2);
             if (type === 'isobaric') return this.getArrow(
@@ -206,7 +206,7 @@
               (t.start < t.end ? 0 : Math.PI)-Math.atan2(Math.abs(t.end-t.start), Math.abs(v.end-v.start))
             );
           }
-          else if (this.graphType === 'pt') {
+          if (this.graphType === 'pt') {
             if (type === 'isothermal') return this.getArrow(t, (p.start+p.end)/2, p.start < p.end ? 0 : Math.PI);
             if (type === 'isochoric') return this.getArrow(
               (t.start+t.end)/2,
@@ -215,7 +215,6 @@
             );
             if (type === 'isobaric') return this.getArrow((t.start+t.end)/2, p, (t.start < t.end ? 0 : Math.PI)-Math.PI/2);
           }
-          return []
         })())
         /*if (this.graphType === 'pv') {
           if (type === 'isothermal') return this.makeHyperbola(v, t*500);
@@ -258,6 +257,7 @@
         stroke-width: 8;
         stroke-linecap: round;
         stroke-linejoin: round;
+        transition: .5s;
     }
     .isoline {
         fill: none;

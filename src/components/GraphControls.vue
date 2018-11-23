@@ -1,10 +1,11 @@
 <template>
 <div>
-    <div
+    <graph-controls-process
             v-for="(process, i) in $store.state.processes"
-            :key="i">
-        {{process.type}}
-    </div>
+            :process="process"
+            :i="i"
+            :key="i"/>
+    <!--разумный диапазон - 250:500 -->
     <input type="number" v-model.number="constant"/>
     <input type="number" v-model.number="start"/>
     <input type="number" v-model.number="end"/>
@@ -16,13 +17,17 @@
 </template>
 
 <script>
+  import GraphControlsProcess from './GraphControlsProcess.vue'
   export default {
     name: 'graph-controls',
+    components: {
+      GraphControlsProcess
+    },
     data() {
       return {
-        constant: 0,
-        start: 0,
-        end: 0,
+        constant: 250,
+        start: 250,
+        end: 500,
       }
     },
     methods: {
