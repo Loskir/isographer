@@ -1,7 +1,7 @@
 <template>
     <g>
         <polyline
-                v-if="showIsoline"
+                v-if="process.isoline"
                 :points="isoline"
                 class="isoline"
                 :class="process.type"/>
@@ -17,6 +17,7 @@
 </template>
 
 <script>
+  let arrowRotation = 0;
   export default {
     name: 'graph-process',
     props: {
@@ -25,8 +26,6 @@
     },
     data() {
       return {
-        showIsoline: true,
-        arrowRotation: 0
       }
     },
     methods: {
@@ -86,18 +85,18 @@
       getInclinedLine(start, end, c) {
         return [[start, start*c], [end, end*c]]
       },
-      getArrow(x, y, α=this.arrowRotation) {
+      getArrow(x, y, a=arrowRotation) {
         let l = 40;
         let w = 10;
         let s = Math.sqrt(l*l+w*w); // side
-        let β = Math.atan2(w, l);
-        // α - угол поворота всей стрелки
-        // β - константный угол поворота сторон стрелки
+        let b = Math.atan2(w, l);
+        // a - угол поворота всей стрелки
+        // b - константный угол поворота сторон стрелки
 
-        y += (l/2)*Math.cos(α); // смещаем центр
-        x -= (l/2)*Math.sin(α);
+        y += (l/2)*Math.cos(a); // смещаем центр
+        x -= (l/2)*Math.sin(a);
 
-        return [[x-s*Math.sin(β-α), y-s*Math.cos(β-α)], [x, y], [x+s*Math.sin(β+α), y-s*Math.cos(β+α)]]
+        return [[x-s*Math.sin(b-a), y-s*Math.cos(b-a)], [x, y], [x+s*Math.sin(b+a), y-s*Math.cos(b+a)]]
       },
       processHyperbola(start, end, constant) {
         return this.makePolylinePoints(this.getHyperbola(start, end, constant))
