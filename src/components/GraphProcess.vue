@@ -6,6 +6,10 @@
                 class="isoline"
                 :class="process.type"/>
         <polyline
+                v-if="process.glow && $store.state.glow"
+                class="glow"
+                :points="line"/>
+        <polyline
                 class="line"
                 :class="process.type"
                 :points="line"/>
@@ -256,7 +260,14 @@
         stroke-width: 8;
         stroke-linecap: round;
         stroke-linejoin: round;
-        transition: .5s;
+    }
+    .glow {
+        fill: none;
+        stroke: red;
+        stroke-width: 50;
+        opacity: .2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
     }
     .isoline {
         fill: none;
