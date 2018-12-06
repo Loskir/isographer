@@ -15,8 +15,7 @@ const store = new Vuex.Store({
     svgSize: 1000,
     nur: 500,
     chaining: true,
-    glow: true,
-    cycled: false
+    glow: true
   },
   mutations: {
     addProcess(state, {type, constant, variable: {start, end}}) {
@@ -49,6 +48,7 @@ const store = new Vuex.Store({
       state.processes.push(obj);
     },
     setByPrev(state, i) {
+      console.log('sbp', i);
       let prev = state.processes[(i-1+state.processes.length)%state.processes.length];
       let process = state.processes[i];
       let type = process.type;
@@ -84,6 +84,7 @@ const store = new Vuex.Store({
       }
     },
     setByNext(state, i) {
+      console.log('sbn', i);
       let next = state.processes[(i+1+state.processes.length)%state.processes.length];
       let process = state.processes[i];
       let type = process.type;
@@ -200,10 +201,18 @@ const store = new Vuex.Store({
     setProcessGlow(state, [i, v]) {
       state.processes[i].glow = v
     },
-    updateField,
-    toggleCycled(state) {
-      state.cycled = !state.cycled
-    }
+    swapProcess(state, i) {
+      let process = state.processes[i];
+      let swap = prop => {
+        let tmp = process[prop].start;
+        process[prop].start = process[prop].end;
+        process[prop].end = tmp;
+      };
+      if (process.type === 'isothermal') ['p', 'v'].forEach(swap);
+      if (process.type === 'isobaric') ['t', 'v'].forEach(swap);
+      if (process.type === 'isochoric') ['p', 't'].forEach(swap)
+    },
+    updateField
   },
   getters: {
     lastProcess(state) {
@@ -224,54 +233,56 @@ const store = new Vuex.Store({
       store.commit('addProcess', payload);
       if (shouldChain) store.commit('setByPrev', state.processes.length-1)
     },
-    editProcess(store, [i, diff, direction=0]) {
+    editProcess(store, [i, diff]) {
       let state = store.state;
+      let l = state.processes.length;
+      let next_i = (i+1+l)%l;
+      let prev_i = (i-1+l)%l;
       let shouldSetPrev = i > 0;
-      let shouldSetNext = i < state.processes.length-1;
+      let shouldSetNext = i < l-1;
+      console.log('editing', i, JSON.parse(JSON.stringify(diff)), shouldSetPrev, shouldSetNext);
       store.commit('editProcess', [i, diff]);
       if (state.chaining) {
-        let history = []; // какой-то костыль для сохранения истории. передается по ссылке и мутирует
-        if (shouldSetNext) store.dispatch('chainProcess', [i+1, 1, history]);
-        if (shouldSetPrev) store.dispatch('chainProcess', [i-1, 0, history]);
-        console.log('end', history)
+        let history = [i];
+        if (shouldSetNext) store.dispatch('chainProcess', [next_i, 1, history]);
+        if (shouldSetPrev) store.dispatch('chainProcess', [prev_i, -1, history]);
       }
     },
-    chainProcess(store, [i, forward, history=[]]) {
-      // prev - идем в конец, next - идем в начало
-      console.log('пришли в',i, history, forward);
-      if (~history.indexOf(i)) return;
-      if (forward) store.commit('setByPrev', i);
-      else store.commit('setByNext', i);
+    chainProcess(store, [i, direction=0, history=[]]) {
       history.push(i);
-      if (forward) {
-        if (i < store.state.processes.length-1) {
-          store.dispatch('chainProcess', [i+1, forward, history])
-        }
-        else if (store.state.cycled) {
-          store.dispatch('chainProcess', [0, forward, history])
-        }
-      }
-      else {
-        if (i > 0) {
-          store.dispatch('chainProcess', [i-1, forward, history]);
-        }
-        else if (store.state.cycled) {
-          store.dispatch('chainProcess', [store.state.processes.length-1, forward, history])
-        }
-      }
+      let state = store.state;
+      if (!state.chaining) return;
+
+      let l = state.processes.length;
+      let next_i = (i+1+l)%l;
+      let prev_i = (i-1+l)%l;
+
+      // let [key, val] = diff;
+      // let key_isstart = !!key.match(/^[tpv]_start$/);
+      // let key_isend = !!key.match(/^[tpv]_end$/);
+
+      let shouldSetPrev = (direction !== 1) && i > 0;
+      let shouldSetNext = (direction !== -1) && i < l-1;
+      console.log('пришли в', i, 'direction', direction, shouldSetPrev, shouldSetNext, history);
+
+
+      if (direction === 1) store.commit('setByPrev', i);
+      else if (direction === -1) store.commit('setByNext', i);
+
+      if (shouldSetNext && !history.includes(next_i)) store.dispatch('chainProcess', [next_i, 1, history]);
+      if (shouldSetPrev && !history.includes(prev_i)) store.dispatch('chainProcess', [prev_i, -1, history]);
+      console.log('end', i)
     },
     deleteProcess(store, i) {
-      let shouldSetNext = i < store.state.processes.length-1;
       store.commit('deleteProcess', i);
-      store.dispatch('chainProcess', [i-1, false, shouldSetNext])
+      if (i > 0) store.dispatch('chainProcess', [i-1, 1])
     },
-    toggleCycled(store) {
-      if (store.state.cycled) {
-        store.commit('toggleCycled');
-        return
-      }
+    swapProcess(store, i) {
+      store.commit('swapProcess', i);
+      store.dispatch('chainProcess', [i]);
+    },
+    updateCycle(store) {
       let state = store.state;
-      console.log(store.state.cycled);
       if (state.processes.length < 3) return;
       let last = state.processes[state.processes.length-1];
       let last_i = state.processes.length-1;
@@ -318,7 +329,6 @@ const store = new Vuex.Store({
           store.dispatch('editProcess', [last_i, ['t_end', first.t.start]]);
         }
       }
-      store.commit('toggleCycled')
     }
   }
 });

@@ -51,6 +51,7 @@
     </template>
     <input v-else type="range" :value="process.v" @input="input('v', $event)" :min="min" :max="max">-->
     <label><input type="checkbox" :checked="process.isoline" @input="toggleIsoline">isoline</label>
+    <button @click="$store.dispatch('swapProcess', i)">swap</button>
     <button @click="$store.dispatch('deleteProcess', i)">x</button>
 </div>
 </template>

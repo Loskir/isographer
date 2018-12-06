@@ -1,21 +1,19 @@
 <template>
-    <g>
+    <g
+            :class="process.type">
         <polyline
                 v-if="process.isoline"
                 :points="isoline"
-                class="isoline"
-                :class="process.type"/>
+                class="isoline"/>
         <polyline
                 v-if="process.glow && $store.state.glow"
                 class="glow"
                 :points="line"/>
         <polyline
                 class="line"
-                :class="process.type"
                 :points="line"/>
         <polyline
                 class="arrow"
-                :class="process.type"
                 :points="arrow"/>
     </g>
 </template>
@@ -193,30 +191,30 @@
                 let c = points[mp];
                 let p = points[mp-1];
                 let n = points[mp+1];
-                angle = (Math.atan2(Math.abs(c[1]-p[1]), Math.abs(c[0]-p[0])) + Math.atan2(Math.abs(c[1]-n[1]), Math.abs(c[0]-n[0]))) /2
+                angle = (
+                  Math.atan2(Math.abs(c[1]-p[1]), Math.abs(c[0]-p[0]))
+                  +
+                  Math.atan2(Math.abs(c[1]-n[1]), Math.abs(c[0]-n[0]))
+                ) /2
               }
-              return this.getArrow(points[mp][0], points[mp][1], (p.start < p.end ? 0 : Math.PI)+Math.PI/2-angle)
+              return this.getArrow(...this.centerPoint, (p.start < p.end ? 0 : Math.PI)+Math.PI/2-angle)
             }
-            if (type === 'isochoric') return this.getArrow(v, (p.start+p.end)/2, p.start < p.end ? 0 : Math.PI);
-            if (type === 'isobaric') return this.getArrow((v.start+v.end)/2, p, (v.start < v.end ? 0 : Math.PI)-Math.PI/2);
+            if (type === 'isochoric') return this.getArrow(...this.centerPoint, p.start < p.end ? 0 : Math.PI);
+            if (type === 'isobaric') return this.getArrow(...this.centerPoint, (v.start < v.end ? 0 : Math.PI)-Math.PI/2);
           }
           if (this.graphType === 'vt') {
-            if (type === 'isothermal') return this.getArrow(t, (v.start+v.end)/2, v.start < v.end ? 0 : Math.PI);
-            if (type === 'isochoric') return this.getArrow((t.start+t.end)/2, v, (t.start < t.end ? 0 : Math.PI)-Math.PI/2);
-            if (type === 'isobaric') return this.getArrow(
-              (t.start+t.end)/2,
-              (v.start+v.end)/2,
+            if (type === 'isothermal') return this.getArrow(...this.centerPoint, v.start < v.end ? 0 : Math.PI);
+            if (type === 'isochoric') return this.getArrow(...this.centerPoint, (t.start < t.end ? 0 : Math.PI)-Math.PI/2);
+            if (type === 'isobaric') return this.getArrow(...this.centerPoint,
               (t.start < t.end ? 0 : Math.PI)-Math.atan2(Math.abs(t.end-t.start), Math.abs(v.end-v.start))
             );
           }
           if (this.graphType === 'pt') {
-            if (type === 'isothermal') return this.getArrow(t, (p.start+p.end)/2, p.start < p.end ? 0 : Math.PI);
-            if (type === 'isochoric') return this.getArrow(
-              (t.start+t.end)/2,
-              (p.start+p.end)/2,
+            if (type === 'isothermal') return this.getArrow(...this.centerPoint, p.start < p.end ? 0 : Math.PI);
+            if (type === 'isochoric') return this.getArrow(...this.centerPoint,
               (t.start < t.end ? 0 : Math.PI)-Math.atan2(Math.abs(t.end-t.start), Math.abs(p.end-p.start))
             );
-            if (type === 'isobaric') return this.getArrow((t.start+t.end)/2, p, (t.start < t.end ? 0 : Math.PI)-Math.PI/2);
+            if (type === 'isobaric') return this.getArrow(...this.centerPoint, (t.start < t.end ? 0 : Math.PI)-Math.PI/2);
           }
         })())
         /*if (this.graphType === 'pv') {
@@ -236,6 +234,30 @@
           if (type === 'isochoric') return this.makeInclinedLine(t, 500/v);
           if (type === 'isobaric') return this.makeHorizontalLine(t, p);
         }*/
+      },
+      centerPoint() {
+        let nur = this.$store.state.nur;
+        let {type, p, v, t} = this.process;
+        if (this.graphType === 'pv') {
+          if (type === 'isothermal') {
+            let args = [...v.start > v.end ? [v.end, v.start] : [v.start, v.end], t*nur, 1];
+            let mp = this.getHyperbolaMidpointer(...args);
+            let points = this.getHyperbola(...args, true);
+            return points[mp]
+          }
+          if (type === 'isochoric') return [v, (p.start+p.end)/2];
+          if (type === 'isobaric') return [(v.start+v.end)/2, p];
+        }
+        if (this.graphType === 'vt') {
+          if (type === 'isothermal') return [t, (v.start+v.end)/2];
+          if (type === 'isochoric') return [(t.start+t.end)/2, v];
+          if (type === 'isobaric') return [(t.start+t.end)/2, (v.start+v.end)/2]
+        }
+        if (this.graphType === 'pt') {
+          if (type === 'isothermal') return [t, (p.start+p.end)/2];
+          if (type === 'isochoric') return [(t.start+t.end)/2, (p.start+p.end)/2];
+          if (type === 'isobaric') return [(t.start+t.end)/2, p];
+        }
       }
     }
   }
@@ -246,13 +268,16 @@
     @isobaric: darkred;
     @isochoric: darkblue;
     .isothermal {
-        stroke: @isothermal;
+        .line, .glow, .isoline {stroke: @isothermal}
+        .arrow {fill: @isothermal}
     }
     .isobaric {
-        stroke: @isobaric;
+        .line, .glow, .isoline {stroke: @isobaric}
+        .arrow {fill: @isobaric}
     }
     .isochoric {
-        stroke: @isochoric;
+        .line, .glow, .isoline {stroke: @isochoric}
+        .arrow {fill: @isochoric}
     }
     .line {
         /*shape-rendering: geometricPrecision;*/
@@ -263,9 +288,8 @@
     }
     .glow {
         fill: none;
-        stroke: red;
         stroke-width: 50;
-        opacity: .2;
+        opacity: .25;
         stroke-linecap: round;
         stroke-linejoin: round;
     }
@@ -276,16 +300,5 @@
         /*stroke-dashoffset: 10;*/
         stroke-linecap: round;
         stroke-linejoin: round;
-    }
-    .arrow {
-        &.isothermal {
-            fill: @isothermal;
-        }
-        &.isobaric {
-            fill: @isobaric;
-        }
-        &.isochoric {
-            fill: @isochoric;
-        }
     }
 </style>

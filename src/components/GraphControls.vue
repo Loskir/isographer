@@ -1,30 +1,28 @@
 <template>
 <div class="graph-controls-root">
-    <graph-controls-process
-            v-for="(process, i) in $store.state.processes"
-            :process="process"
-            :i="i"
-            :key="i"/>
+    <div class="processes">
+        <graph-controls-process
+                v-for="(process, i) in $store.state.processes"
+                :process="process"
+                :i="i"
+                :key="i"/>
+    </div>
     <!--разумный диапазон - 250:500 -->
-    <!--<input :disabled="$store.state.chaining" type="number" v-model.number="constant"/>-->
-    <!--<input :disabled="$store.state.chaining" type="number" v-model.number="start"/>-->
-    <!--<input :disabled="$store.state.chaining" type="number" v-model.number="end"/>-->
-    <!--<br>-->
-    <label>T<input type="radio" name="a" value="isothermal"/></label>
-    <label>P<input type="radio" name="a" value="isobaric"/></label>
-    <label>V<input type="radio" name="a" value="isochoric"/></label>
-    <br>
-
-    <button @click="add('isothermal')">+T</button>
-    <button @click="add('isobaric')">+P</button>
-    <button @click="add('isochoric')">+V</button>
-    <br>
-    <label><input type="checkbox" v-model="chaining">Enable chaining</label>
-    <br>
-    <label><input type="checkbox" v-model="glow">Enable glow</label>
-    <br>
-    <span>{{$store.state.cycled}}</span>
-    <button @click="toggleCycled">{{$store.state.cycled ? 'uncycle' : 'cycle'}}</button>
+    <div class="controls">
+        <!--<label>T<input type="radio" name="a" value="isothermal"/></label>-->
+        <!--<label>P<input type="radio" name="a" value="isobaric"/></label>-->
+        <!--<label>V<input type="radio" name="a" value="isochoric"/></label>-->
+        <!--<br>-->
+        <button @click="add('isothermal')">+T</button>
+        <button @click="add('isobaric')">+P</button>
+        <button @click="add('isochoric')">+V</button>
+        <br>
+        <label><input type="checkbox" v-model="chaining">Enable chaining</label>
+        <br>
+        <label><input type="checkbox" v-model="glow">Enable glow</label>
+        <br>
+        <button @click="updateCycle">update cycle</button>
+    </div>
 </div>
 </template>
 
@@ -55,8 +53,8 @@
           }
         })
       },
-      toggleCycled() {
-        this.$store.dispatch('toggleCycled')
+      updateCycle() {
+        this.$store.dispatch('updateCycle')
       }
     },
     computed: {
@@ -68,5 +66,9 @@
 <style scoped lang="less">
     .graph-controls-root {
         font-family: 'Ubuntu Mono', monospace;
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
     }
 </style>
