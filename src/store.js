@@ -5,9 +5,9 @@ Vue.use(Vuex);
 
 import { getField, updateField } from 'vuex-map-fields';
 
-let T = (p, v) => p*v/store.state.nur;
-let P = (t, v) => store.state.nur*t/v;
-let V = (p, t) => store.state.nur*t/p;
+let T = (p, v) => Math.round(p*v/store.state.nur);
+let P = (t, v) => Math.round(store.state.nur*t/v);
+let V = (p, t) => Math.round(store.state.nur*t/p);
 
 const store = new Vuex.Store({
   state: {
@@ -18,7 +18,10 @@ const store = new Vuex.Store({
     glow: true
   },
   mutations: {
-    addProcess(state, {type, constant, variable: {start, end}}) {
+    addProcess(state, obj) {
+      state.processes.push(Object.assign({isoline: true, glow: false}, obj));
+    },
+    /*addProcessAlt(state, {type, constant, variable: {start, end}}) {
       let obj = {
         type,
         isoline: true,
@@ -46,9 +49,9 @@ const store = new Vuex.Store({
         })
       }
       state.processes.push(obj);
-    },
+    },*/
     setByPrev(state, i) {
-      console.log('sbp', i);
+      // console.log('sbp', i);
       let prev = state.processes[(i-1+state.processes.length)%state.processes.length];
       let process = state.processes[i];
       let type = process.type;
@@ -84,7 +87,7 @@ const store = new Vuex.Store({
       }
     },
     setByNext(state, i) {
-      console.log('sbn', i);
+      // console.log('sbn', i);
       let next = state.processes[(i+1+state.processes.length)%state.processes.length];
       let process = state.processes[i];
       let type = process.type;
@@ -215,24 +218,58 @@ const store = new Vuex.Store({
     updateField
   },
   getters: {
-    lastProcess(state) {
-      return state.processes[state.processes.length-1]
-    },
     getField
   },
   actions: {
-    addProcess(store, payload) {
+    addProcess(store, [type, subType]) {
+      console.log('addProcess', [type, subType]);
+      let last = {
+        t: Math.random()*200+200,
+        p: Math.random()*100+200,
+        v: Math.random()*100+200
+      };
+
+      if (store.state.processes.length > 0)
+        last = store.state.processes[store.state.processes.length-1];
+
+      if (type === 'isothermal') {
+        let t = last.t.end || last.t;
+        let start = (last.v.end || last.v);
+        let end = start+100*(subType === 'up' ? 1 : -1);
+        return store.commit('addProcess', {
+          type, t,
+          v: {start, end},
+          p: {start: P(t, start), end: P(t, end)}
+        })
+      }
+      if (type === 'isobaric') {
+        let p = last.p.end || last.p;
+        let start = (last.v.end || last.v);
+        let end = start+100*(subType === 'up' ? 1 : -1);
+        return store.commit('addProcess', {
+          type, p,
+          v: {start, end},
+          t: {start: T(p, start), end: T(p, end)}
+        })
+      }
+      if (type === 'isochoric') {
+        let v = last.v.end || last.v;
+        let start = (last.t.end || last.t);
+        let end = start+100*(subType === 'up' ? 1 : -1);
+        return store.commit('addProcess', {
+          type, v,
+          t: {start, end},
+          p: {start: P(start, v), end: P(end, v)}
+        })
+      }
+    },
+    /*addProcessAlt(store, payload) {
       let state = store.state;
       let chaining = state.chaining;
       let shouldChain = state.processes.length > 0 && chaining;
-      if (chaining) {
-        payload.constant = Math.ceil(Math.random()*250)+250;
-        payload.variable.start = Math.ceil(Math.random()*250)+250;
-        payload.variable.end = Math.ceil(Math.random()*250)+250;
-      }
       store.commit('addProcess', payload);
       if (shouldChain) store.commit('setByPrev', state.processes.length-1)
-    },
+    },*/
     editProcess(store, [i, diff]) {
       let state = store.state;
       let l = state.processes.length;
@@ -263,7 +300,7 @@ const store = new Vuex.Store({
 
       let shouldSetPrev = (direction !== 1) && i > 0;
       let shouldSetNext = (direction !== -1) && i < l-1;
-      console.log('пришли в', i, 'direction', direction, shouldSetPrev, shouldSetNext, history);
+      // console.log('пришли в', i, 'direction', direction, shouldSetPrev, shouldSetNext, history);
 
 
       if (direction === 1) store.commit('setByPrev', i);
@@ -271,7 +308,7 @@ const store = new Vuex.Store({
 
       if (shouldSetNext && !history.includes(next_i)) store.dispatch('chainProcess', [next_i, 1, history]);
       if (shouldSetPrev && !history.includes(prev_i)) store.dispatch('chainProcess', [prev_i, -1, history]);
-      console.log('end', i)
+      // console.log('end', i)
     },
     deleteProcess(store, i) {
       store.commit('deleteProcess', i);
@@ -332,9 +369,5 @@ const store = new Vuex.Store({
     }
   }
 });
-
-/*store.subscribe((mutation, state) => {
-  console.log(mutation)
-})*/
 
 export default store

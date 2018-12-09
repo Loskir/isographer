@@ -1,29 +1,45 @@
 <template>
-<div class="graph-controls-root">
-    <div class="processes">
-        <graph-controls-process
-                v-for="(process, i) in $store.state.processes"
-                :process="process"
-                :i="i"
-                :key="i"/>
-    </div>
-    <!--разумный диапазон - 250:500 -->
-    <div class="controls">
-        <!--<label>T<input type="radio" name="a" value="isothermal"/></label>-->
-        <!--<label>P<input type="radio" name="a" value="isobaric"/></label>-->
-        <!--<label>V<input type="radio" name="a" value="isochoric"/></label>-->
-        <!--<br>-->
-        <button @click="add('isothermal')">+T</button>
-        <button @click="add('isobaric')">+P</button>
-        <button @click="add('isochoric')">+V</button>
-        <br>
-        <label><input type="checkbox" v-model="chaining">Enable chaining</label>
-        <br>
-        <label><input type="checkbox" v-model="glow">Enable glow</label>
-        <br>
-        <button @click="updateCycle">update cycle</button>
-    </div>
-</div>
+    <v-layout column fill-height class="graph-controls-root">
+        <div
+                class="no-processes"
+                v-if="$store.state.processes.length === 0">
+            <span>Нет процессов</span>
+            <span>Для добавления нажми на кнопку +</span>
+        </div>
+        <v-expansion-panel
+                class="processes">
+            <graph-controls-process
+                    v-for="(process, i) in $store.state.processes"
+                    :process="process"
+                    :i="i"
+                    :key="`${process.type}_${i}`"/>
+        </v-expansion-panel>
+        <!--разумный диапазон - 250:500 -->
+        <!--<div class="controls">
+            &lt;!&ndash;<label>T<input type="radio" name="a" value="isothermal"/></label>&ndash;&gt;
+            &lt;!&ndash;<label>P<input type="radio" name="a" value="isobaric"/></label>&ndash;&gt;
+            &lt;!&ndash;<label>V<input type="radio" name="a" value="isochoric"/></label>&ndash;&gt;
+            &lt;!&ndash;<br>&ndash;&gt;
+            <v-btn @click="add('isothermal')">+T</v-btn>
+            <v-btn @click="add('isobaric')">+P</v-btn>
+            <v-btn @click="add('isochoric')">+V</v-btn>
+            <br>
+
+            <v-switch
+                    class="mt-0"
+                    v-model="chaining"
+                    label="Chaining"
+                    color="primary"
+                    :hide-details="true"/>
+            <v-switch
+                    class="mt-0"
+                    v-model="glow"
+                    label="Glow"
+                    color="primary"
+                    :hide-details="true"/>
+            <v-btn @click="updateCycle">update cycle</v-btn>
+        </div>-->
+    </v-layout>
 </template>
 
 <script>
@@ -43,7 +59,7 @@
       }
     },
     methods: {
-      add(type) {
+      /*add(type) {
         this.$store.dispatch('addProcess', {
           type,
           constant: this.constant,
@@ -52,7 +68,7 @@
             end: this.end
           }
         })
-      },
+      },*/
       updateCycle() {
         this.$store.dispatch('updateCycle')
       }
@@ -65,10 +81,22 @@
 
 <style scoped lang="less">
     .graph-controls-root {
-        font-family: 'Ubuntu Mono', monospace;
+        font-family: 'Roboto Mono', monospace;
         width: 100%;
         display: flex;
-        flex-direction: row;
-        justify-content: space-around;
+        flex-direction: column;
+        align-items: center;
+
+        .no-processes {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 1rem;
+            opacity: .8;
+        }
     }
 </style>

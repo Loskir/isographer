@@ -1,63 +1,67 @@
 <template>
-<div
-        class="process-root"
-        @mouseenter="handleMouseenter"
-        @mouseleave="handleMouseleave"
-        :class="process.type">
-    <span>{{process.type}}</span>
-    <div class="col">
+    <v-expansion-panel-content
+            class="process-root"
+            @mouseenter.native="handleMouseenter"
+            @mouseleave.native="handleMouseleave"
+            :class="process.type">
+        <div slot="header">{{process.type}}</div>
         <div class="col">
-            <div class="row">
-                <span>T:</span>
-                <div v-if="typeof process.t === 'object'">
-                    <input type="range" style="width: 100px" :value="process.t.start" @input="input('t_start', $event)" :min="min" :max="max"/>
-                    <input type="range" style="width: 100px" :value="process.t.end" @input="input('t_end', $event)" :min="min" :max="max"/>
+            <div
+                    class="row"
+                    v-for="val in ['t', 'p', 'v']">
+                <!--<span>{{}}:</span>-->
+                <div v-if="process[val].start">
+                    <v-range-slider
+                            :label="val.toUpperCase()+':'"
+                            class="slider mt-0"
+                            :value="[Math.min(process[val].start, process[val].end), Math.max(process[val].start, process[val].end)]"
+                            thumb-label
+                            :hide-details="true"
+                            :always-dirty="true"
+                            :max="max" :min="min" @input="input(val, $event, true)"
+                    />
                 </div>
-                <input v-else type="range" style="width: 200px" :value="process.t" @input="input('t', $event)" :min="min" :max="max">
-            </div>
-            <div class="row">
-                <span>P:</span>
-                <div v-if="typeof process.p === 'object'">
-                    <input type="range" style="width: 100px" :value="process.p.start" @input="input('p_start', $event)" :min="min" :max="max"/>
-                    <input type="range" style="width: 100px" :value="process.p.end" @input="input('p_end', $event)" :min="min" :max="max"/>
-                </div>
-                <input v-else type="range" style="width: 200px" :value="process.p" @input="input('p', $event)" :min="min" :max="max">
-            </div>
-            <div class="row">
-                <span>V:</span>
-                <div v-if="typeof process.v === 'object'">
-                    <input type="range" style="width: 100px" :value="process.v.start" @input="input('v_start', $event)" :min="min" :max="max"/>
-                    <input type="range" style="width: 100px" :value="process.v.end" @input="input('v_end', $event)" :min="min" :max="max"/>
-                </div>
-                <input v-else type="range" style="width: 200px" :value="process.v" @input="input('v', $event)" :min="min" :max="max">
+                <v-slider
+                        :label="val.toUpperCase()+':'"
+                        class="slider mt-0"
+                        v-else
+                        :value="process[val]"
+                        thumb-label
+                        :hide-details="true"
+                        :always-dirty="true"
+                        :max="max" :min="min" @input="input(val, $event)"
+                />
             </div>
         </div>
-    </div>
-    <!--<template v-if="typeof process.t === 'object'">
-        <input type="range" :value="process.t.start" @input="input('t_start', $event)" :min="min" :max="max"/>
-        <input type="range" :value="process.t.end" @input="input('t_end', $event)" :min="min" :max="max"/>
-    </template>
-    <input v-else type="range" :value="process.t" @input="input('t', $event)" :min="min" :max="max">
-    P:
-    <template v-if="typeof process.p === 'object'">
-        <input type="range" :value="process.p.start" @input="input('p_start', $event)" :min="min" :max="max"/>
-        <input type="range" :value="process.p.end" @input="input('p_end', $event)" :min="min" :max="max"/>
-    </template>
-    <input v-else type="range" :value="process.p" @input="input('p', $event)" :min="min" :max="max">
-    V:
-    <template v-if="typeof process.v === 'object'">
-        <input type="range" :value="process.v.start" @input="input('v_start', $event)" :min="min" :max="max"/>
-        <input type="range" :value="process.v.end" @input="input('v_end', $event)" :min="min" :max="max"/>
-    </template>
-    <input v-else type="range" :value="process.v" @input="input('v', $event)" :min="min" :max="max">-->
-    <label><input type="checkbox" :checked="process.isoline" @input="toggleIsoline">isoline</label>
-    <button @click="$store.dispatch('swapProcess', i)">swap</button>
-    <button @click="$store.dispatch('deleteProcess', i)">x</button>
-</div>
+        <div class="row">
+            <v-switch
+                    class="mt-0"
+                    v-model="isoline"
+                    label="isoline"
+                    color="primary"
+                    :hide-details="true"/>
+            <!--<label><input type="checkbox" :checked="process.isoline" @input="toggleIsoline">isoline</label>-->
+            <v-btn
+                    class="my-0 mx-1"
+                    @click="$store.dispatch('swapProcess', i)"
+                    icon>
+                <v-icon>swap_horiz</v-icon>
+            </v-btn>
+            <v-btn
+                    class="my-0 mx-1"
+                    @click="$store.dispatch('deleteProcess', i)"
+                    icon>
+                <v-icon>delete</v-icon>
+            </v-btn>
+        </div>
+    </v-expansion-panel-content>
 </template>
 
 <script>
+  import VInput from "vuetify/lib/components/VInput/VInput";
+
   export default {
+    components: {VInput},
     name: 'graph-controls-process',
     props: {
       process: Object,
@@ -65,8 +69,8 @@
     },
     data() {
       return {
-        min: 200,
-        max: 1000
+        min: 10,
+        max: 2000
       }
     },
     methods: {
@@ -79,38 +83,59 @@
       handleProcessEdit(t, v) {
         this.$store.dispatch('editProcess', [this.i, [t, v]])
       },
-      input(type, e) {
-        let v = e.target.value;
-        v = parseInt(v);
-        if (isNaN(v)) return;
-        if (v === 0) return;
-        this.handleProcessEdit(type, v)
+      input(type, e, double=false) {
+        console.log(type, e);
+        if (e === 0) return;
+        if (double) {
+          let r = this.reversed[type];
+          console.log(r);
+          let a=false,b=false;
+          if (this.process[type][r ? 'start' : 'end'] !== e[0]) a = true;
+          if (this.process[type][r ? 'end' : 'start'] !== e[1]) b = true;
+          console.log(a,b);
+          if (a) this.handleProcessEdit(type+(r ? '_start' : '_end'), e[0]);
+          if (b) this.handleProcessEdit(type+(r ? '_end' : '_start'), e[1]);
+        }
+        else this.handleProcessEdit(type, e)
+      }
+    },
+    computed: {
+      reversed() {
+        return {
+          't': this.process.t.start < this.process.t.end,
+          'p': this.process.p.start < this.process.p.end,
+          'v': this.process.v.start < this.process.v.end,
+        }
       },
-      toggleIsoline(e) {
-        let v = e.target.checked;
-        this.$store.commit('setProcessIsoline', [this.i, v])
+      isoline: {
+        get: function () {
+          return this.process.isoline
+        },
+        set: function (e) {
+          console.log(e)
+          this.$store.commit('setProcessIsoline', [this.i, e])
+        }
       }
     }
   }
 </script>
 
 <style scoped lang="less">
+    @import "../assets/vars.less";
     .process-root {
         font-family: inherit;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-around;
 
-        /*&.isothermal {*/
-            /*background-color: fade(lightgreen, 30%);*/
-        /*}*/
-        /*&.isobaric {*/
-            /*background-color: fade(lightcoral, 30%);*/
-        /*}*/
-        /*&.isochoric {*/
-            /*background-color: fade(lightblue, 30%);*/
-        /*}*/
+        padding: 10px 20px;
+
+        &.isothermal {
+            background-color: fade(@isothermal, 20%);
+        }
+        &.isobaric {
+            background-color: fade(@isobaric, 20%);
+        }
+        &.isochoric {
+            background-color: fade(@isochoric, 20%);
+        }
     }
     input[type='number'] {
         font-family: inherit;
@@ -120,9 +145,14 @@
         flex-direction: column;
     }
     .row {
-        flex-grow: 1;
-        justify-content: flex-start;
         display: flex;
         flex-direction: row;
+    }
+    .fg {
+        flex-grow: 1;
+        justify-content: flex-start;
+    }
+    .slider {
+        /*width: 100px;*/
     }
 </style>

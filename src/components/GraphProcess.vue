@@ -264,9 +264,7 @@
 </script>
 
 <style scoped lang="less">
-    @isothermal: darkgreen;
-    @isobaric: darkred;
-    @isochoric: darkblue;
+    @import "../assets/vars.less";
     .isothermal {
         .line, .glow, .isoline {stroke: @isothermal}
         .arrow {fill: @isothermal}
@@ -296,9 +294,10 @@
     .isoline {
         fill: none;
         stroke-width: 3;
-        stroke-dasharray: 1 10;
+        stroke-dasharray: 5 5;
+        opacity: .5;
         /*stroke-dashoffset: 10;*/
-        stroke-linecap: round;
-        stroke-linejoin: round;
+        /*stroke-linecap: round;*/
+        /*stroke-linejoin: round;*/
     }
 </style>

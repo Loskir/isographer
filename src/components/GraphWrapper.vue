@@ -21,7 +21,6 @@
         display: flex;
         flex-direction: row;
         width: 100%;
-        padding: 0 1rem;
         box-sizing: border-box;
     }
 </style>
