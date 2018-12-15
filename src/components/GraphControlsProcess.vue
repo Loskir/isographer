@@ -8,6 +8,7 @@
         <div class="col">
             <div
                     class="row"
+                    :key="val"
                     v-for="val in ['t', 'p', 'v']">
                 <!--<span>{{}}:</span>-->
                 <div v-if="process[val].start">
@@ -58,10 +59,7 @@
 </template>
 
 <script>
-  import VInput from "vuetify/lib/components/VInput/VInput";
-
   export default {
-    components: {VInput},
     name: 'graph-controls-process',
     props: {
       process: Object,

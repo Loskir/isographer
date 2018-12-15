@@ -18,12 +18,12 @@
                     class="axis-text"
                     :x="$store.state.svgSize-60"
                     :y="$store.state.svgSize-30"
-                    v-text="type[1]"/>
+                    v-text="type[1] === 't' ? 'T' : type[1]"/>
             <text
                     class="axis-text"
                     :x="30"
                     :y="50"
-                    v-text="type[0]"/>
+                    v-text="type[0] === 't' ? 'T' : type[0]"/>
         </svg>
     </div>
 </template>
